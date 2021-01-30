@@ -1,10 +1,3 @@
-admin:
-  access_log_path: /tmp/admin_access.log
-  address:
-    socket_address:
-      protocol: TCP
-      address: 127.0.0.1
-      port_value: 9901
 static_resources:
   listeners:
     - name: listener_0
@@ -26,61 +19,28 @@ static_resources:
                       domains: [ "*" ]
                       routes:
                         - match:
-                            prefix: "/auth"
+                            prefix: "/"
+                            grpc: {}  # 注意增加了这个
                           route:
-                            cluster: service_auth
-                        - match:
-                            prefix: "/business"
-                          route:
-                            cluster: service_business
+                            cluster: service_echo
                             retry_policy:
                               retry_on: connect-failure, 5xx
-                              num_retries: 5
+                              num_retries: 2
                 http_filters:
                   - name: envoy.filters.http.router
+                    typed_config: {}
   clusters:
-    - name: service_auth
+    - name: service_echo
       connect_timeout: 0.25s
-      type: LOGICAL_DNS
-      dns_lookup_family: V4_ONLY
+      type: STRICT_DNS
       lb_policy: ROUND_ROBIN
+      http2_protocol_options: { }  # 注意增加了这个
       load_assignment:
-        cluster_name: service_auth
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: 10.0.1.232
-                      port_value: 30000
-    - name: service_business
-      connect_timeout: 0.25s
-      type: strict_DNS
-      dns_lookup_family: V4_ONLY
-      lb_policy: ROUND_ROBIN
-      #      hosts: [
-      #        {socket_address: { address: 10.0.1.232, port_value: 30001 }},
-      #        {socket_address: { address: 10.0.1.232, port_value: 30002 }},
-      #      ]
-      load_assignment:
-        cluster_name: service_business
+        cluster_name: echo
         endpoints:
           - lb_endpoints:
             - endpoint:
                 address:
                   socket_address:
-                    address: 10.0.1.232
-                    port_value: 30001
-            - endpoint:
-                address:
-                  socket_address:
-                    address: 10.0.1.232
-                    port_value: 30002
-      health_checks:
-        - timeout: 1s
-          interval: 10s
-          interval_jitter: 1s
-          unhealthy_threshold: 1
-          healthy_threshold: 1
-          http_health_check:
-            path: "/_/health"
+                    address: echo
+                    port_value: 5005
