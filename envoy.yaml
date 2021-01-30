@@ -33,6 +33,9 @@ static_resources:
                             prefix: "/business"
                           route:
                             cluster: service_business
+                            retry_policy:
+                              retry_on: connect-failure, 5xx
+                              num_retries: 5
                 http_filters:
                   - name: envoy.filters.http.router
   clusters:
