@@ -29,6 +29,10 @@ static_resources:
                             prefix: "/auth"
                           route:
                             cluster: service_auth
+                        - match:
+                            prefix: "/business"
+                          route:
+                            cluster: service_business
                 http_filters:
                   - name: envoy.filters.http.router
   clusters:
@@ -46,4 +50,34 @@ static_resources:
                     socket_address:
                       address: 10.0.1.232
                       port_value: 30000
-
+    - name: service_business
+      connect_timeout: 0.25s
+      type: strict_DNS
+      dns_lookup_family: V4_ONLY
+      lb_policy: ROUND_ROBIN
+      #      hosts: [
+      #        {socket_address: { address: 10.0.1.232, port_value: 30001 }},
+      #        {socket_address: { address: 10.0.1.232, port_value: 30002 }},
+      #      ]
+      load_assignment:
+        cluster_name: service_business
+        endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 10.0.1.232
+                    port_value: 30001
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 10.0.1.232
+                    port_value: 30002
+      health_checks:
+        - timeout: 1s
+          interval: 10s
+          interval_jitter: 1s
+          unhealthy_threshold: 1
+          healthy_threshold: 1
+          http_health_check:
+            path: "/_/health"
